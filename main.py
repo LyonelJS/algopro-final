@@ -43,15 +43,20 @@ while running:
     if character1.xpos < WIDTH//2:
         if character1.reset_character_pos:
             character1.reset_position(1.2 * WIDTH//3, 0.96 * HEIGHT//2)
+            character1.direction = 'right'
     else:
         if character1.reset_character_pos:
             character1.reset_position(1.65 *WIDTH//3, 0.96 * HEIGHT//2)
+            character1.direction = 'left'
+
     if character2.xpos < WIDTH//2:
         if character2.reset_character_pos:
             character2.reset_position(1.2 * WIDTH//3, 0.96 * HEIGHT//2)
+            character2.direction = 'right'
     else:
         if character2.reset_character_pos:
             character2.reset_position(1.65 *WIDTH//3, 0.96 * HEIGHT//2)
+            character2.direction = 'left'
 
     zoomed_background = zoom(background_image, zoom_factor)
     x_offset, y_offset = center_background(zoomed_background)
