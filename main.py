@@ -31,37 +31,13 @@ while running:
             if event.key == pygame.K_ESCAPE:
                 running = False
 
-    character1.movement()
-    character2.movement()
+    character1.update(character2)
+    character2.update(character1)
 
-    character1.attack(character2)
-    character2.attack(character1)
-
-    character1.score(character2)
-    character2.score(character1)
-    
-    if character1.xpos < WIDTH//2:
-        if character1.reset_character_pos:
-            character1.reset_position(1.2 * WIDTH//3, 0.96 * HEIGHT//2)
-            character1.direction = 'right'
-    else:
-        if character1.reset_character_pos:
-            character1.reset_position(1.65 *WIDTH//3, 0.96 * HEIGHT//2)
-            character1.direction = 'left'
-
-    if character2.xpos < WIDTH//2:
-        if character2.reset_character_pos:
-            character2.reset_position(1.2 * WIDTH//3, 0.96 * HEIGHT//2)
-            character2.direction = 'right'
-    else:
-        if character2.reset_character_pos:
-            character2.reset_position(1.65 *WIDTH//3, 0.96 * HEIGHT//2)
-            character2.direction = 'left'
 
     zoomed_background = zoom(background_image, zoom_factor)
     x_offset, y_offset = center_background(zoomed_background)
     offset_x, offset_y = camera()
-    Character.offset_x, Character.offset_y = offset_x, offset_y
 
     screen.blit(zoomed_background, (x_offset - offset_x, y_offset - offset_y))
 

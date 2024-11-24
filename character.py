@@ -53,11 +53,11 @@ class Character:
         self.reset_character_pos = False
         self.collide_cooldown = False
         self.attack_available = True
+        self.attack_cooldown = False
         self.range = 'melee'
         self.win = False
+        self.score_added = False
         self.dash_cooldown = False
-        self.offset_x = 0
-        self.offset_y = 0
         self.prev_key = None
         self.in_the_air = False
         self.alive = True
@@ -70,15 +70,18 @@ class Character:
         self.current_action = 'idle'
         self.frame_index = 0
         self.image = self.animations[self.current_action]
+        self.beam_height = HEIGHT
+        self.beam_width = 120
+        self.transparency = 50
         
 
 
 
-    def get_rect_hitbox(self, offset_x, offset_y):
-        return pygame.Rect(self.xpos + offset_x + 30, self.ypos + offset_y, self.width - 40, self.height)
+    def get_rect_hitbox(self):
+        return pygame.Rect(self.xpos + 30, self.ypos , self.width - 40, self.height)
     
-    def get_rect_range(self, offset_x, offset_y):
-        return pygame.Rect(self.xpos + self.range_x_adjustment + offset_x + 30, self.ypos - self.range_y_adjustment + offset_y, self.range_width - self.range_width_adjustment - 40, self.range_height - self.range_height_adjustment)
+    def get_rect_range(self):
+        return pygame.Rect(self.xpos + self.range_x_adjustment + 30, self.ypos - self.range_y_adjustment, self.range_width - self.range_width_adjustment - 40, self.range_height - self.range_height_adjustment)
     
     def take_damage(self, damage):
         self.health = max(0, self.health - damage)  # Health can't go below 0
@@ -105,25 +108,13 @@ class Character:
 
     def check_collision(self, ground, platforms, borders):
         for border in borders:
-            if self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(border) and self.collide_cooldown == False:
+            if self.get_rect_hitbox().colliderect(border) and self.collide_cooldown == False:
                 self.reset_character_pos = True
                 self.collide_cooldown = True
                 self.health = 0                
                 self.check_health()
-                
-
-            if self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(border_top):
-                print('top')
-            elif self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(border_bottom):
-                print('bottom')
-            elif self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(border_left):
-                print('left')
-            elif self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(border_right):
-                print('right')
-
-
-
-        if self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(ground):
+        
+        if self.get_rect_hitbox().colliderect(ground):
             self.ypos = ground.top - self.height
             self.velocity_y = 0
             self.jump_count = 0
@@ -133,34 +124,35 @@ class Character:
             self.platform_collidable = True
             self.in_the_air = False
 
-        elif self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(bottom):
+        elif self.get_rect_hitbox().colliderect(bottom):
             self.collide_bottom = True
             self.collide_ground = False
             self.collide_platform = False
             self.in_the_air = False
-
+        
         else:
-            for platform in platforms:
-                if self.get_rect_hitbox(self.offset_x, self.offset_y).colliderect(platform) and self.velocity_y > 0 and self.platform_collidable:
-                    self.ypos = platform.top - self.height
-                    self.velocity_y = 0
-                    self.jump_count = 0
-                    self.collide_ground = False
+            for platform in platforms:                
+                if self.get_rect_hitbox().colliderect(platform):
                     self.collide_platform = True
+                    self.collide_ground = False
                     self.collide_bottom = False
-                    self.platform_collidable = True
-                    self.in_the_air = False
-    
-                    break
+                    if self.velocity_y > 0 and self.platform_collidable:
+                        self.ypos = platform.top - self.height
+                        self.velocity_y = 0
+                        self.jump_count = 0 
+                        self.platform_collidable = True
+                        self.in_the_air = False
+                        break
+
     def check_movement(self):
         if self.alive:
             if self.is_attacking:
                 self.set_action('attack1')
             if self.hurt:
                 self.set_action('hurt')
-            if self.in_the_air and not self.is_attacking:
+            if self.in_the_air and not self.is_attacking and not self.hurt:
                 self.set_action('jump')
-            if self.walking and not self.in_the_air and not self.is_attacking:
+            if self.walking and not self.in_the_air and not self.is_attacking and not self.hurt:
                 self.set_action('walk')
 
             if not self.walking and not self.in_the_air and not self.is_attacking and not self.hurt:
@@ -175,19 +167,24 @@ class Character:
         # Left character controls
         if self.controls == 'left':
             if keys[pygame.K_w] and self.velocity_y >= 0 and self.ymovement:
-                character1.direction = 'up'
+                self.direction = 'up'
                 if self.jump_count < 2:
-                    self.velocity_y = -20
+                    if not self.hurt:
+                        self.velocity_y = -16
+                    if self.hurt:
+                        self.velocity_y = -10
                     self.jump_count += 1
                     self.in_the_air = True
                     self.frame_index = 0
                     self.platform_collidable = True
-                if keys[pygame.K_v] and self.velocity_y >= 25:
-                    self.velocity_y = -25
+                if keys[pygame.K_v] and self.velocity_y >= 21:
+                    self.velocity_y = -20
 
             if keys[pygame.K_s] and self.ymovement:
                 self.direction = 'down'
                 if self.collide_platform:
+                    self.in_the_air = True
+                    self.frame_index = 5
                     self.velocity_y += 0.78
                     self.ypos += self.velocity_y
                     self.platform_collidable = False
@@ -218,18 +215,23 @@ class Character:
             if keys[pygame.K_UP] and self.velocity_y >= 0 and self.ymovement:
                 self.direction = 'up'
                 if self.jump_count < 2:
-                    self.velocity_y = -20
+                    if not self.hurt:
+                        self.velocity_y = -16
+                    if self.hurt:
+                        self.velocity_y = -10
                     self.jump_count += 1
                     self.in_the_air = True
                     self.frame_index = 0
                     self.platform_collidable = True
 
-                if keys[pygame.K_m] and self.velocity_y >= 25:
-                    self.velocity_y = -25
+                if keys[pygame.K_m] and self.velocity_y >= 21:
+                    self.velocity_y = -20
 
             if keys[pygame.K_DOWN] and self.ymovement:
                 self.direction = 'down'
                 if self.collide_platform:
+                    self.in_the_air = True
+                    self.frame_index = 5
                     self.velocity_y += 0.78
                     self.ypos += self.velocity_y
                     self.platform_collidable = False
@@ -254,10 +256,6 @@ class Character:
             if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
                 self.walking = False
 
-        self.player_direction()
-        self.check_movement()
-        self.update_animation(self.name)
-
         if self.gravity:
             self.velocity_y += 0.78
             self.ypos += self.velocity_y
@@ -267,7 +265,9 @@ class Character:
     def reset_position(self, target_x, target_y):
         self.gravity = False  # Stop gravity for smooth movement
         self.velocity_y = 0  # Reset vertical velocity
-            
+        self.beam_height = HEIGHT
+        self.beam_width = 120
+        self.transparency = 50
             # Calculate the step distance
         x_step = abs(self.xpos - target_x) / 30
         y_step = abs(self.ypos - target_y) / 30
@@ -292,7 +292,7 @@ class Character:
             self.collide_cooldown = False
             self.health = 1000
             self.check_health()
-
+            self.score_added = False
             
 
     # Stop moving once the character is close enough to the target
@@ -300,7 +300,7 @@ class Character:
     
     def check_hits(self, other):
         other.inrange = False
-        if self.get_rect_range(self.offset_x, self.offset_y).colliderect(other.get_rect_hitbox(self.offset_x, self.offset_y)):
+        if self.get_rect_range().colliderect(other.get_rect_hitbox()):
             other.inrange = True
 
     def player_direction(self):
@@ -386,13 +386,13 @@ class Character:
             self.knockback_direction = None
 
     def attack(self, other):
-        self.check_hits(other)
 
         keys = pygame.key.get_pressed()
         multiplier = 1
 
         if self.controls == 'left':
-            if keys[pygame.K_t] and self.attack_available:  # Check if the attack key is pressed and cooldown is not active
+            if keys[pygame.K_t] and self.attack_available and not self.attack_cooldown:  
+                self.attack_cooldown = True
                 if other.inrange:  # If the other character is within range
                     other.take_damage(50)
                     other.inrange = False
@@ -402,10 +402,13 @@ class Character:
                     self.skill_counter = min(3, self.skill_counter)
                     self.ulti_counter = min(8, self.ulti_counter)
                     self.attack_available = False
+                    self.attack_cooldown = True
                     self.is_attacking = True
             if self.attack_available:
-                if self.frame_index >= 2:
+                if self.frame_index > 2:
                     self.is_attacking = False
+            if not keys[pygame.K_t]:
+                self.attack_cooldown = False
 
             if keys[pygame.K_g] and self.attack_available:
                 self.range = 'range'
@@ -427,12 +430,13 @@ class Character:
                     if other.inrange:
                         other.take_damage(70)
                         other.inrange = False
-                        multiplier = 6
+                        multiplier = 7
                         other.is_knocked_back = True
                         self.attack_available = False
 
         if self.controls == 'right':
-            if keys[pygame.K_i] and self.attack_available:  # Check if the attack key is pressed and cooldown is not active
+            if keys[pygame.K_i] and self.attack_available and not self.attack_cooldown:  # Check if the attack key is pressed and cooldown is not active
+                self.attack_cooldown = True
                 if other.inrange:  # If the other character is within range
                     other.take_damage(50)
                     other.inrange = False
@@ -443,12 +447,15 @@ class Character:
                     self.ulti_counter = min(8, self.ulti_counter)
                     self.attack_available = False
                     self.is_attacking = True
-
             if self.attack_available:
-                if self.frame_index >=2:
+                if self.frame_index > 5:
                     self.is_attacking = False
+            if not keys[pygame.K_i]:
+                self.attack_cooldown = False
+
             
             if keys[pygame.K_k] and self.attack_available:
+                self.attack2_cooldown = True
                 self.range = 'range'
                 if self.skill_counter == 3:
                     if other.inrange:
@@ -468,10 +475,14 @@ class Character:
                     if other.inrange:
                         other.take_damage(70)
                         other.inrange = False
-                        multiplier = 6
+                        multiplier = 7
                         other.is_knocked_back = True
                         self.attack_available = False
-        self.check_movement()
+
+        if self.gravity:
+            if self.velocity_y > 1:
+                self.in_the_air = True
+                self.frame_index = 5
 
         if other.is_knocked_back:
             other.knockback(self.direction, multiplier)
@@ -483,8 +494,9 @@ class Character:
             self.attack_available = True
         
     def score(self, other):
-        if self.health == 0:
+        if self.alive == False and not self.score_added:
             other.point += 1
+            self.score_added = True
         if (self.point - other.point == 2 and self.point > other.point) or self.point == 3:
             self.win = True
 
@@ -492,8 +504,6 @@ class Character:
         if self.current_action != action:
             self.frame_index = 0  # Reset to the first frame of the new action
         self.current_action = action
-
-        self.update_time = pygame.time.get_ticks()  # Track when the action started
 
     def update_animation(self, character):
         if self.current_action == 'idle' or 'walk' or 'dead' or 'hurt':
@@ -503,11 +513,14 @@ class Character:
                 speed = 0.7
             else:
                 speed = 0.05     
-        if self.current_action == 'attack1':
-            if self.frame_index < 2:
-                speed = 0.8   
-            elif self.frame_index >= 2:
-                speed = 0.01        
+        if character1.current_action == 'attack1':
+            if character1.frame_index:
+                speed = 0.6         
+        if character2.current_action == 'attack1':
+            if character2.frame_index < 3:
+                speed = 0.6   
+            elif character2.frame_index >= 3:
+                speed = 0.1        
 
         self.frame_index += speed
             # Loop animation if it exceeds frame count
@@ -551,6 +564,39 @@ class Character:
             if self.direction == 'right':
                 character2.x_offset -= 10
         screen.blit(pygame.transform.scale(self.image, (self.width + 80, self.height + 80)), (int(self.xpos - offset_x - self.x_offset), int(self.ypos - offset_y - 80)))
+        if self.reset_character_pos:
+            surface = pygame.Surface((self.beam_width, self.beam_height), pygame.SRCALPHA)
+            surface.fill((255, 255, 100, self.transparency))
+            screen.blit(surface, (self.xpos - offset_x, 0))
+        else:
+            beam_offset = 0
+            beam_offset = (120 - self.beam_width)/2
+            surface = pygame.Surface((self.beam_width, self.beam_height), pygame.SRCALPHA)
+            surface.fill((255, 255, 100, self.transparency))
+            screen.blit(surface, (self.xpos - offset_x + beam_offset, 0))
+            self.transparency = max(0, self.transparency - 0.7)  # Decrease alpha gradually, with a minimum of 0
+            self.beam_width = max(0, self.beam_width - 0.7)  # Decrease height
+            self.beam_height = max(0, self.beam_height - 20)  # Decrease height
+        
+
+    def update(self, other):
+        self.movement()
+        self.player_direction()
+        self.attack(other)
+        self.check_hits(other)
+        if self.xpos < WIDTH//2:
+            if self.reset_character_pos:
+                self.reset_position(1.2 * WIDTH//3, 0.96 * HEIGHT//2)
+                self.direction = 'right'
+        else:
+            if self.reset_character_pos:
+                self.reset_position(1.65 *WIDTH//3, 0.96 * HEIGHT//2)
+                self.direction = 'left'
+        self.update_animation(self.name)
+        self.check_movement()
+        self.score(other)
+
+
 
 # Initialize character objects
 character1 = Character('character1', 1.2 * WIDTH // 3, HEIGHT // 2, 'left', animations={
