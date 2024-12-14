@@ -49,8 +49,13 @@ def draw_hud(offset_x, offset_y):
     health_text1 = hud_font.render(f"{character1.health}", True, (255, 255, 255))
     screen.blit(health_text1, (310, 185))
 
-    pos_text1 = hud_font.render(f"Health: {character1.xpos}{character1.ypos}", True, (255, 255, 255))
+    pos_text1 = hud_font.render(f"sprint: {character2.sprint_time}", True, (255, 255, 255))
     screen.blit(pos_text1, (WIDTH//2, HEIGHT//2))
+
+    # Sprint bar for character 1
+    pygame.draw.rect(screen, background_bar_color, (297, 220, health_bar_width + 6, bar_height + 6 - 20))
+    pygame.draw.rect(screen, (173, 216, 230), (300, 223, character1.sprint_time / (10/3), bar_height - 20))
+
     
     # Skill counter circle and arc for character 1
     skill_pos1 = (350, 300)  # Position for Character 1's skill counter circle
@@ -91,11 +96,17 @@ def draw_hud(offset_x, offset_y):
         screen.blit(score_font.render(f"Score: {character2.point}", True, (255, 0, 0)), (2 * WIDTH // 3 - 100, 120))
 
     health_lost = 1000 - character2.health
+    sprint_lost = 1000 - character2.sprint_time
     # Health bar for character 2
     pygame.draw.rect(screen, background_bar_color, (WIDTH - 297 - health_bar_width - 6, 177, health_bar_width + 6, bar_height + 6))
     pygame.draw.rect(screen, health_bar_color, (WIDTH - 600 + health_lost / (10/3), 180, character2.health / (10/3), bar_height))
     health_text2 = hud_font.render(f"{character2.health}", True, (255, 255, 255))
     screen.blit(health_text2, (WIDTH - 370, 185))
+
+    # Sprint bar for character 2
+    pygame.draw.rect(screen, background_bar_color, (WIDTH - 297 - health_bar_width - 6, 220, health_bar_width + 6, bar_height + 6 - 20))
+    pygame.draw.rect(screen, (173, 216, 230), (WIDTH - 600 + sprint_lost / (10/3), 223, character2.sprint_time / (10/3), bar_height - 20))
+
 
     # Skill counter circle and arc for character 2
     skill_pos2 = (WIDTH - 350, 300)  # Position for Character 2's skill counter circle

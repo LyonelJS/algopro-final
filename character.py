@@ -9,8 +9,20 @@ character1_walk = [pygame.image.load(f"character1/walk/walk_{i}.png").convert_al
 character1_idle = [pygame.image.load(f"character1/idle/idle_{i}.png").convert_alpha() for i in range(1, 7)]
 character1_jump = [pygame.image.load(f"character1/jump/jump_{i}.png").convert_alpha() for i in range(1, 9)]
 character1_dead = [pygame.image.load(f"character1/dead/dead_{i}.png").convert_alpha() for i in range(1, 6)]
-character1_attack1 = [pygame.image.load(f"character1/attack_1/attack_{i}.png").convert_alpha() for i in range(1, 4)]
+character1_attack1_side = [pygame.image.load(f"character1/attack_1/side/attack_{i}.png").convert_alpha() for i in range(1, 4)]
+character1_attack1_up = [pygame.image.load(f"character1/attack_1/up/attack_{i}.png").convert_alpha() for i in range(1, 4)]
+character1_attack1_down = [pygame.image.load(f"character1/attack_1/down/attack_{i}.png").convert_alpha() for i in range(1, 4)]
+
+character1_attack2_side = [pygame.image.load(f"character1/attack_2/side/attack_{i}.png").convert_alpha() for i in range(1, 14)]
+character1_attack2_up = [pygame.image.load(f"character1/attack_2/up/attack_{i}.png").convert_alpha() for i in range(1, 12)]
+character1_attack2_down = [pygame.image.load(f"character1/attack_2/down/attack_{i}.png").convert_alpha() for i in range(1, 12)]
+
+character1_ult_side = [pygame.image.load(f"character1/ult/side/attack_{i}.png").convert_alpha() for i in range(1, 10)]
+character1_ult_up = [pygame.image.load(f"character1/ult/up/attack_{i}.png").convert_alpha() for i in range(1, 10)]
+character1_ult_down = [pygame.image.load(f"character1/ult/down/attack_{i}.png").convert_alpha() for i in range(1, 10)]
+
 character1_hurt = [pygame.image.load(f"character1/hurt/hurt_{i}.png").convert_alpha() for i in range(1, 3)]
+character1_run = [pygame.image.load(f"character1/run/run_{i}.png").convert_alpha() for i in range(1, 8)]
 
 
 character2_walk = [pygame.transform.flip(pygame.image.load(f"character2/walk/walk_{i}.png").convert_alpha(), True, False) for i in range(1, 7)]
@@ -19,6 +31,7 @@ character2_jump = [pygame.transform.flip(pygame.image.load(f"character2/jump/jum
 character2_dead = [pygame.transform.flip(pygame.image.load(f"character2/dead/dead_{i}.png").convert_alpha(), True, False) for i in range(1, 4)]
 character2_attack1 = [pygame.image.load(f"character2/attack_1/attack_{i}.png").convert_alpha() for i in range(1, 7)]
 character2_hurt = [pygame.image.load(f"character2/hurt/hurt_{i}.png").convert_alpha() for i in range(1, 4)]
+character2_run = [pygame.image.load(f"character2/run/run_{i}.png").convert_alpha() for i in range(1, 8)]
 
 
 
@@ -54,17 +67,26 @@ class Character:
         self.collide_cooldown = False
         self.attack_available = True
         self.attack_cooldown = False
+        self.attack2_cooldown = False
         self.range = 'melee'
         self.win = False
         self.score_added = False
         self.dash_cooldown = False
         self.prev_key = None
         self.in_the_air = False
+        self.run = False
         self.alive = True
         self.is_attacking = False
+        self.is_attacking2 = False
+        self.is_ult = False
+
         self.walking = False
         self.x_offset = 0
         self.hurt = False
+        self.sprint_time = 1000
+        self.sprint_reset_cooldown = False
+        self.timer = 1000
+
 
         self.animations = animations
         self.current_action = 'idle'
@@ -73,6 +95,8 @@ class Character:
         self.beam_height = HEIGHT
         self.beam_width = 120
         self.transparency = 50
+        self.attacking_range = False
+
         
 
 
@@ -147,15 +171,35 @@ class Character:
     def check_movement(self):
         if self.alive:
             if self.is_attacking:
-                self.set_action('attack1')
+                if self.direction == 'up':
+                    self.set_action('attack1_up')
+                elif self.direction == 'down':
+                    self.set_action('attack1_down')
+                elif self.direction == 'left' or 'right':
+                    self.set_action('attack1_side')
+            if self.is_attacking2:
+                if self.direction == 'up':
+                    self.set_action('attack2_up')
+                elif self.direction == 'down':
+                    self.set_action('attack2_down')
+                elif self.direction == 'left' or 'right':
+                    self.set_action('attack2_side')
+            if self.is_ult:
+                if self.direction == 'up':
+                    self.set_action('ult_up')
+                elif self.direction == 'down':
+                    self.set_action('ult_down')
+                elif self.direction == 'left' or 'right':
+                    self.set_action('ult_side')
             if self.hurt:
                 self.set_action('hurt')
-            if self.in_the_air and not self.is_attacking and not self.hurt:
+            if self.in_the_air and not self.is_attacking and not self.is_attacking2 and not self.is_ult and not self.hurt:
                 self.set_action('jump')
-            if self.walking and not self.in_the_air and not self.is_attacking and not self.hurt:
+            if self.run and not self.in_the_air and not self.is_attacking and not self.is_attacking2 and not self.is_ult and not self.hurt:
+                self.set_action('run')
+            if self.walking and not self.in_the_air and not self.is_attacking and not self.is_attacking2 and not self.is_ult and not self.hurt and not self.run:
                 self.set_action('walk')
-
-            if not self.walking and not self.in_the_air and not self.is_attacking and not self.hurt:
+            if not self.walking and not self.in_the_air and not self.is_attacking and not self.is_attacking2 and not self.is_ult and not self.hurt and not self.run:
                 self.set_action('idle')
 
     def movement(self):
@@ -177,8 +221,10 @@ class Character:
                     self.in_the_air = True
                     self.frame_index = 0
                     self.platform_collidable = True
-                if keys[pygame.K_v] and self.velocity_y >= 21:
+                if keys[pygame.K_v] and self.velocity_y >= 18 and self.sprint_time > 0:
                     self.velocity_y = -20
+                    self.sprint_time -= 200
+                    self.run = True
 
             if keys[pygame.K_s] and self.ymovement:
                 self.direction = 'down'
@@ -189,25 +235,50 @@ class Character:
                     self.ypos += self.velocity_y
                     self.platform_collidable = False
                     
-                if keys[pygame.K_v]:
+                if keys[pygame.K_v] and self.sprint_time > 0:
                     self.velocity_y = 25
+                    self.sprint_time -= 200
+                    self.run = True
+
+
 
             if keys[pygame.K_a] and not self.collide_bottom and self.xmovement:
                 self.xpos -= 5
                 self.direction = 'left'
                 self.walking = True
-                if keys[pygame.K_v]:
+                if keys[pygame.K_v] and self.sprint_time > 0:
                     self.xpos -= 10
+                    self.sprint_time -= 20
+                    self.run = True
+
 
             if keys[pygame.K_d] and not self.collide_bottom and self.xmovement:
                 self.xpos += 5
                 self.direction = 'right'
                 self.walking = True
-                if keys[pygame.K_v]:
+                if keys[pygame.K_v] and self.sprint_time > 0:
                     self.xpos += 10
-            
+                    self.sprint_time -= 20
+                    self.run = True
+
+
             if not keys[pygame.K_a] and not keys[pygame.K_d]:
                 self.walking = False
+            
+            if (not keys[pygame.K_v] or (not keys[pygame.K_a] and not keys[pygame.K_d] and not keys[pygame.K_w] and not keys[pygame.K_s])) and not self.sprint_reset_cooldown :
+                self.sprint_time += 200
+                self.run = False
+            if self.sprint_time <= 0:
+                self.sprint_reset_cooldown = True
+                self.timer -= 10
+                self.run = False
+
+            if self.timer <= 0:
+                self.timer = 1000
+                self.sprint_reset_cooldown = False
+                self.sprint_time += 200
+            elif self.sprint_time > 1000:
+                self.sprint_time = 1000
             # Idle action when no movement keys are pressed
            
         # Right character controls
@@ -224,8 +295,11 @@ class Character:
                     self.frame_index = 0
                     self.platform_collidable = True
 
-                if keys[pygame.K_m] and self.velocity_y >= 21:
+                if keys[pygame.K_m] and self.velocity_y >= 18 and self.sprint_time > 0:
                     self.velocity_y = -20
+                    self.sprint_time -= 200
+                    self.run = True
+
 
             if keys[pygame.K_DOWN] and self.ymovement:
                 self.direction = 'down'
@@ -235,26 +309,49 @@ class Character:
                     self.velocity_y += 0.78
                     self.ypos += self.velocity_y
                     self.platform_collidable = False
-                if keys[pygame.K_m]:
+                if keys[pygame.K_m] and self.sprint_time > 0:
                     self.velocity_y = 25
+                    self.sprint_time -= 200
+                    self.run = True
 
-            if keys[pygame.K_LEFT] and not self.collide_bottom and self.xmovement:
+
+            if keys[pygame.K_LEFT] and not self.collide_bottom and self.xmovement :
                 self.xpos -= 5
                 self.direction = 'left'
                 self.walking = True
-                if keys[pygame.K_m]:
+                if keys[pygame.K_m] and self.sprint_time > 0:
                     self.xpos -= 10
+                    self.sprint_time -= 20
+                    self.run = True
+
 
             if keys[pygame.K_RIGHT] and not self.collide_bottom and self.xmovement:
                 self.xpos += 5
                 self.direction = 'right'
                 self.walking = True
-                if keys[pygame.K_m]:
+                if keys[pygame.K_m] and self.sprint_time > 0:
                     self.xpos += 10
+                    self.sprint_time -= 20
+                    self.run = True
+
 
             # Idle action when no movement keys are pressed
             if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
                 self.walking = False
+
+            if (not keys[pygame.K_m] or (not keys[pygame.K_UP] and not keys[pygame.K_DOWN] and not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT])) and not self.sprint_reset_cooldown :
+                self.sprint_time += 200
+                self.run = False
+            if self.sprint_time <= 0:
+                self.sprint_reset_cooldown = True
+                self.timer -= 10
+                self.run = False
+            if self.timer <= 0:
+                self.timer = 1000
+                self.sprint_reset_cooldown = False
+                self.sprint_time += 200
+            elif self.sprint_time > 1000:
+                self.sprint_time = 1000
 
         if self.gravity:
             self.velocity_y += 0.78
@@ -410,29 +507,52 @@ class Character:
             if not keys[pygame.K_t]:
                 self.attack_cooldown = False
 
-            if keys[pygame.K_g] and self.attack_available:
-                self.range = 'range'
+            if keys[pygame.K_g] and self.attack_available and not self.attack2_cooldown:
                 if self.skill_counter == 3:
+                    self.attacking_range = True
+                    self.skill_counter = 0
+                    self.xmovement = False
+                    self.ymovement = False
+
+            if self.attacking_range == True:
+                self.range = 'range'
+                self.is_attacking2 = True
+                self.attack2_cooldown = True
+                if self.frame_index > 6:
                     if other.inrange:
                         other.take_damage(70)
                         other.inrange = False
                         multiplier = 5
                         other.is_knocked_back = True
-                        self.skill_counter = 0
                         self.attack_available = False
-            if not keys[pygame.K_g]:
+            
+            if self.frame_index > 10:
                 multiplier = 1
                 self.range = 'melee'
+                self.attacking_range = False
+                self.attack2_cooldown = False
+                self.is_attacking2 = False
+            
 
             if keys[pygame.K_f] and self.attack_available:
                 if self.ulti_counter == 8:
                     self.ulti_counter = 0
+                    self.is_ult = True
+                    self.xmovement = False
+                    self.ymovement = False
                     if other.inrange:
                         other.take_damage(70)
                         other.inrange = False
                         multiplier = 7
                         other.is_knocked_back = True
                         self.attack_available = False
+            if self.frame_index > 8:
+                self.is_ult = False
+            
+            if not self.is_attacking2 and not self.is_ult:
+                self.xmovement = True
+                self.ymovement = True
+                
 
         if self.controls == 'right':
             if keys[pygame.K_i] and self.attack_available and not self.attack_cooldown:  # Check if the attack key is pressed and cooldown is not active
@@ -508,14 +628,45 @@ class Character:
     def update_animation(self, character):
         if self.current_action == 'idle' or 'walk' or 'dead' or 'hurt':
             speed = 0.1
+        if self.current_action == 'run':
+            speed = 0.2
         if self.current_action == 'jump':
             if self.frame_index < 4:
                 speed = 0.7
             else:
                 speed = 0.05     
-        if character1.current_action == 'attack1':
-            if character1.frame_index:
-                speed = 0.6         
+        if character1.current_action == 'attack1_side':
+            speed = 0.6         
+        if character1.current_action == 'attack2_side':
+            if character1.frame_index < 7:
+                speed = 0.6
+            elif character1.frame_index >= 7:
+                speed = 0.1
+        if character1.current_action == 'attack2_up':
+            if character1.frame_index < 7:
+                speed = 0.6
+            elif character1.frame_index >= 7:
+                speed = 0.1
+        if character1.current_action == 'attack2_down':
+            if character1.frame_index < 5:
+                speed = 0.6
+            elif character1.frame_index >= 7:
+                speed = 0.1
+        if character1.current_action == 'ult_side':
+            if self.frame_index < 6:
+                speed = 0.6
+            elif self.frame_index >= 6:
+                speed = 0.02
+        if character1.current_action == 'ult_up':
+            if self.frame_index < 7:
+                speed = 0.6
+            elif self.frame_index >= 7:
+                speed = 0.05
+        if character1.current_action == 'ult_down':
+            if self.frame_index < 7:
+                speed = 0.6
+            elif self.frame_index >= 7:
+                speed = 0.05
         if character2.current_action == 'attack1':
             if character2.frame_index < 3:
                 speed = 0.6   
@@ -525,7 +676,7 @@ class Character:
         self.frame_index += speed
             # Loop animation if it exceeds frame count
         if self.frame_index >= len(self.animations[self.current_action]):
-            if self.current_action == 'walk' or self.current_action == 'idle':
+            if self.current_action == 'walk' or self.current_action == 'idle' or self.current_action == 'run':
                 self.frame_index = 0  # Loop walk/idle
             else:
                 self.frame_index = len(self.animations[self.current_action]) - 1  # Hold attack animation on the last frame
@@ -538,7 +689,7 @@ class Character:
                 self.image = pygame.transform.flip(self.image, True, False)
 
         if character == 'character2':
-            if self.is_attacking or self.hurt:
+            if self.is_attacking or self.hurt or self.run:
                 if self.direction == 'left' or self.prev_key == 'left':
                     self.image = pygame.transform.flip(self.image, True, False)
             else:
@@ -556,14 +707,27 @@ class Character:
                 character1.x_offset += 40
                 if self.walking:
                     character1.x_offset -= 20
+                if self.is_attacking2: 
+                    if self.current_action == 'attack2_side':
+                        character1.x_offset += self.width + 20
             if self.direction == 'right':
                 if self.walking:
                     character1.x_offset += 20
+                if self.is_attacking2: 
+                    if self.current_action == 'attack2_side':
+                        character1.x_offset -= self.width - 40
         if character2:
             character2.x_offset = 35
             if self.direction == 'right':
                 character2.x_offset -= 10
-        screen.blit(pygame.transform.scale(self.image, (self.width + 80, self.height + 80)), (int(self.xpos - offset_x - self.x_offset), int(self.ypos - offset_y - 80)))
+
+        if self.is_attacking2:
+            if self.current_action == 'attack2_side':
+                screen.blit(pygame.transform.scale(self.image, (2*self.width + 100, self.height + 80)), (int(self.xpos - offset_x - self.x_offset), int(self.ypos - offset_y - 80)))
+            elif self.current_action == 'attack2_up' or 'attack2_down':
+                screen.blit(pygame.transform.scale(self.image, (self.width + 80, 2*self.height + 180)), (int(self.xpos - offset_x - self.x_offset), int(self.ypos - offset_y - 250)))
+        else:
+            screen.blit(pygame.transform.scale(self.image, (self.width + 80, self.height + 80)), (int(self.xpos - offset_x - self.x_offset), int(self.ypos - offset_y - 80)))
         if self.reset_character_pos:
             surface = pygame.Surface((self.beam_width, self.beam_height), pygame.SRCALPHA)
             surface.fill((255, 255, 100, self.transparency))
@@ -577,6 +741,8 @@ class Character:
             self.transparency = max(0, self.transparency - 0.7)  # Decrease alpha gradually, with a minimum of 0
             self.beam_width = max(0, self.beam_width - 0.7)  # Decrease height
             self.beam_height = max(0, self.beam_height - 20)  # Decrease height
+        pygame.draw.rect(screen, (255, 0, 0), self.get_rect_hitbox(), 2)
+        pygame.draw.rect(screen, (0, 0, 255), self.get_rect_range(), 2)
         
 
     def update(self, other):
@@ -604,8 +770,18 @@ character1 = Character('character1', 1.2 * WIDTH // 3, HEIGHT // 2, 'left', anim
         'idle': character1_idle,  # List of frames for idle
         'jump': character1_jump,  # List of frames for jumping
         'dead': character1_dead,  # List of frames for dead
-        'attack1': character1_attack1,  # List of frames for dead
-        'hurt': character1_hurt
+        'attack1_side': character1_attack1_side,  # List of frames for dead
+        'attack1_up': character1_attack1_up,  # List of frames for dead
+        'attack1_down': character1_attack1_down,  # List of frames for dead
+        'attack2_side': character1_attack2_side,  # List of frames for dead
+        'attack2_up': character1_attack2_up,  # List of frames for dead
+        'attack2_down': character1_attack2_down,  # List of frames for dead
+        'ult_side': character1_ult_side,  # List of frames for dead
+        'ult_up': character1_ult_up,  # List of frames for dead
+        'ult_down': character1_ult_down,  # List of frames for dead
+
+        'hurt': character1_hurt, 
+        'run': character1_run
 
 
     })
@@ -615,7 +791,9 @@ character2 = Character('character2', 1.65 * WIDTH // 3, HEIGHT // 2, 'right', an
         'jump': character2_jump,  # List of frames for jumping
         'dead': character2_dead,  # List of frames for dead
         'attack1': character2_attack1,  # List of frames for dead
-        'hurt': character2_hurt
+
+        'hurt': character2_hurt,
+        'run': character2_run
 
     })
 
