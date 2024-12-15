@@ -1,9 +1,10 @@
 import pygame
 import sys
-from character import *
-from hud import *
-from background import *
-from collision import *
+from character import * # Import character
+from hud import * # Import HUD
+from background import * # Import background
+from collision import * # Import collision check
+from menu import show_menu, pause_menu # Import play again and pause menu
 
 # Initialize Pygame
 pygame.init()
@@ -17,36 +18,74 @@ pygame.display.set_caption("Pygame Template")
 FPS = 120
 clock = pygame.time.Clock()
 
-# Load images
+# Load background image
 background_image = pygame.image.load("map.webp").convert_alpha()
 
 # Main game loop
 if __name__ == '__main__':
     running = True
-while running:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_ESCAPE:
-                running = False
+    while running:
+        # Reset game
+        character1.reset()
+        character2.reset()
 
-    character1.update(character2)
-    character2.update(character1)
+        while True:  # Inner game loop
+            for event in pygame.event.get():
+                if event.type == pygame.QUIT:
+                    running = False
+                    break
+                elif event.type == pygame.KEYDOWN:
+                    if event.key == pygame.K_ESCAPE: # Show pause menu when escape is clicked
+                        pygame.mouse.set_visible(True)
+                        menu_result = pause_menu(screen, background_image, WIDTH, HEIGHT)
+                        if menu_result == "resume":
+                            continue  # Resume the game
+                        else:
+                            running = False  # Exit the game loop
+                            break
 
+            # Check win conditions
+            if character1.win:
+                pygame.mouse.set_visible(True)
 
-    zoomed_background = zoom(background_image, zoom_factor)
-    x_offset, y_offset = center_background(zoomed_background)
-    offset_x, offset_y = camera()
+                menu_result = show_menu(
+                    screen, background_image, character1.point, character2.point, 1, WIDTH, HEIGHT
+                )
+                if menu_result == "play_again":
+                    break  # Restart the game loop
+                else:
+                    running = False
+                    break
+            elif character2.win:
+                pygame.mouse.set_visible(True)
 
-    screen.blit(zoomed_background, (x_offset - offset_x, y_offset - offset_y))
+                menu_result = show_menu(
+                    screen, background_image, character1.point, character2.point, 2, WIDTH, HEIGHT
+                )
+                if menu_result == "play_again":
+                    break  # Restart the game loop
+                else:
+                    running = False
+                    break
 
-    draw_hud(offset_x, offset_y)
-    character1.draw(offset_x, offset_y)
-    character2.draw(offset_x, offset_y)
-    
-    pygame.display.flip()
-    clock.tick(FPS)
+            # Update and draw the game
+            pygame.mouse.set_visible(False)
+            # Call the character functions
+            character1.update(character2)
+            character2.update(character1)
+            # Set the background offset
+            zoomed_background = zoom(background_image, zoom_factor)
+            x_offset, y_offset = center_background(zoomed_background)
+            offset_x, offset_y = camera()
+            # Draw the background
+            screen.blit(zoomed_background, (x_offset - offset_x, y_offset - offset_y))
+            # Draw the HUD and Characters
+            draw_hud(offset_x, offset_y)
+            character1.draw(offset_x, offset_y)
+            character2.draw(offset_x, offset_y)
+
+            pygame.display.flip()
+            clock.tick(FPS)
 
 pygame.quit()
 sys.exit()
