@@ -4,31 +4,31 @@ from character import *
 
 def draw_hud(offset_x, offset_y):
     if character2.win:
-        winner_font = pygame.font.Font(None, 100)  # Larger font for winner text
+        winner_font = pygame.font.Font(None, 130) 
 
         winner_text = winner_font.render("Player 2 Wins!", True, (0, 0, 255))  # Blue
-        points_font = pygame.font.Font(None, 120)  # Even larger font for points
+        points_font = pygame.font.Font(None, 120)  
 
         # Points text
         player1_points_text = points_font.render(f"{character1.point}", True, (255, 0, 0))  # Red
         player2_points_text = points_font.render(f"{character2.point}", True, (0, 0, 255))  # Blue
         # Draw the winning texts
-        screen.blit(player1_points_text, (WIDTH // 2 - winner_text.get_width() - player1_points_text.get_width() - 50, HEIGHT // 2 - 200))  # Player 1 score
+        screen.blit(player1_points_text, (WIDTH // 2 - winner_text.get_width() - player1_points_text.get_width() + 50, HEIGHT // 2 - 200))  # Player 1 score
         screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - 200))  # winner text
-        screen.blit(player2_points_text, (WIDTH // 2 + winner_text.get_width() + 50, HEIGHT // 2 - 200))  # Player 2 score
+        screen.blit(player2_points_text, (WIDTH // 2 + winner_text.get_width() - 50, HEIGHT // 2 - 200))  # Player 2 score
     elif character1.win:
-        winner_font = pygame.font.Font(None, 100)  # Larger font for winner text
+        winner_font = pygame.font.Font(None, 130)  
 
         winner_text = winner_font.render("Player 1 Wins!", True, (255, 0, 0))  # Red
-        points_font = pygame.font.Font(None, 120)  # Even larger font for points
+        points_font = pygame.font.Font(None, 120)  
 
         # Points text
         player1_points_text = points_font.render(f"{character1.point}", True, (255, 0, 0))  # Red
         player2_points_text = points_font.render(f"{character2.point}", True, (0, 0, 255))  # Blue
         # Draw the winning texts
-        screen.blit(player1_points_text, (WIDTH // 2 - winner_text.get_width() - player1_points_text.get_width() - 50, HEIGHT // 2 - 200))  # Player 1 score
+        screen.blit(player1_points_text, (WIDTH // 2 - winner_text.get_width() - player1_points_text.get_width() + 50, HEIGHT // 2 - 200))  # Player 1 score
         screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - 200))  # winner text
-        screen.blit(player2_points_text, (WIDTH // 2 + winner_text.get_width() + 50, HEIGHT // 2 - 200))  # Player 2 score
+        screen.blit(player2_points_text, (WIDTH // 2 + winner_text.get_width() - 50, HEIGHT // 2 - 200))  # Player 2 score
     else:
         # Font Sizes
         score_font = pygame.font.Font(None, 48)  

@@ -9,8 +9,8 @@ def blur_surface(surface, amount):
 # Menu function to the winner and points
 def show_menu(screen, background_image, player1_points, player2_points, winner, WIDTH, HEIGHT):
     blurred_background = blur_surface(background_image, 10)
-    winner_font = pygame.font.Font(None, 100)  # Larger font for winner text
-    points_font = pygame.font.Font(None, 120)  # Even larger font for points
+    winner_font = pygame.font.Font(None, 130)  
+    points_font = pygame.font.Font(None, 120)  
 
     # Determine winner text color
     if winner == 1:
@@ -31,9 +31,9 @@ def show_menu(screen, background_image, player1_points, player2_points, winner, 
         screen.blit(blurred_background, (0, 0)) # Draw the blurred background
 
         # Draw the winning texts
-        screen.blit(player1_points_text, (WIDTH // 2 - winner_text.get_width() - player1_points_text.get_width() - 50, HEIGHT // 2 - 200))  # Player 1 score
+        screen.blit(player1_points_text, (WIDTH // 2 - winner_text.get_width() - player1_points_text.get_width() + 50, HEIGHT // 2 - 200))  # Player 1 score
         screen.blit(winner_text, (WIDTH // 2 - winner_text.get_width() // 2, HEIGHT // 2 - 200))  # winner text
-        screen.blit(player2_points_text, (WIDTH // 2 + winner_text.get_width() + 50, HEIGHT // 2 - 200))  # Player 2 score
+        screen.blit(player2_points_text, (WIDTH // 2 + winner_text.get_width() - 50, HEIGHT // 2 - 200))  # Player 2 score
 
         # Draw buttons
         pygame.draw.rect(screen, (0, 128, 0), play_again_rect)  # Green play again button
