@@ -1,10 +1,10 @@
 import pygame
 import sys
-from character import * # Import character
-from hud import * # Import HUD
-from background import * # Import background
-from collision import * # Import collision check
-from menu import show_menu, pause_menu # Import play again and pause menu
+from character import *
+from hud import *
+from background import *
+from collision import *
+from menu import show_menu, pause_menu
 
 # Initialize Pygame
 pygame.init()
@@ -35,7 +35,7 @@ if __name__ == '__main__':
                     running = False
                     break
                 elif event.type == pygame.KEYDOWN:
-                    if event.key == pygame.K_ESCAPE: # Show pause menu when escape is clicked
+                    if event.key == pygame.K_ESCAPE:  # Show pause menu when escape is clicked
                         pygame.mouse.set_visible(True)
                         menu_result = pause_menu(screen, background_image, WIDTH, HEIGHT)
                         if menu_result == "resume":
@@ -47,39 +47,36 @@ if __name__ == '__main__':
             # Check win conditions
             if character1.win:
                 pygame.mouse.set_visible(True)
-
-                menu_result = show_menu(
-                    screen, background_image, character1.point, character2.point, 1, WIDTH, HEIGHT
-                )
-                if menu_result == "play_again":
-                    break  # Restart the game loop
-                else:
-                    running = False
-                    break
+                if character2.reset_character_pos == False:
+                    menu_result = show_menu(
+                        screen, background_image, character1.point, character2.point, 1, WIDTH, HEIGHT
+                    )
+                    if menu_result == "play_again":
+                        break  # Restart the game loop
+                    else:
+                        running = False
+                        break
             elif character2.win:
                 pygame.mouse.set_visible(True)
-
-                menu_result = show_menu(
-                    screen, background_image, character1.point, character2.point, 2, WIDTH, HEIGHT
-                )
-                if menu_result == "play_again":
-                    break  # Restart the game loop
-                else:
-                    running = False
-                    break
+                if character1.reset_character_pos == False:
+                    menu_result = show_menu(
+                        screen, background_image, character1.point, character2.point, 2, WIDTH, HEIGHT
+                    )
+                    if menu_result == "play_again":
+                        break  # Restart the game loop
+                    else:
+                        running = False
+                        break
 
             # Update and draw the game
             pygame.mouse.set_visible(False)
-            # Call the character functions
             character1.update(character2)
             character2.update(character1)
-            # Set the background offset
             zoomed_background = zoom(background_image, zoom_factor)
             x_offset, y_offset = center_background(zoomed_background)
             offset_x, offset_y = camera()
-            # Draw the background
+
             screen.blit(zoomed_background, (x_offset - offset_x, y_offset - offset_y))
-            # Draw the HUD and Characters
             draw_hud(offset_x, offset_y)
             character1.draw(offset_x, offset_y)
             character2.draw(offset_x, offset_y)

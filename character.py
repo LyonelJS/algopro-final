@@ -4,6 +4,18 @@ from collision import * # Impoort the collisions to check for collisions
 WIDTH, HEIGHT = 1920, 1080 # Set the screen height and width
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 pygame.display.set_caption("Pygame Template")
+# Initialize sound mixer
+pygame.mixer.init()
+character1_attack1_sound = pygame.mixer.Sound("sound/character1_attack1_sound.mp3")  # Adjust the path to your sound file
+character1_attack2_sound = pygame.mixer.Sound("sound/character1_attack2_sound.mp3")  # Adjust the path to your sound file
+character2_attack1_sound = pygame.mixer.Sound("sound/character2_attack1_sound.mp3")  # Adjust the path to your sound file
+character2_attack2_sound = pygame.mixer.Sound("sound/character2_attack2_sound.mp3")  # Adjust the path to your sound file
+jump_sound = pygame.mixer.Sound("sound/jump_sound.mp3")  # Adjust the path to your sound file
+land_sound = pygame.mixer.Sound("sound/land_sound.mp3")  # Adjust the path to your sound file
+jump_sound.set_volume(0.2)
+land_sound.set_volume(0.2)
+
+death_sound = pygame.mixer.Sound("sound/death_sound.mp3")  # Adjust the path to your sound file
 
 # Load all the necessary animations for character 1
 character1_walk = [pygame.image.load(f"character1/walk/walk_{i}.png").convert_alpha() for i in range(1, 6)]
@@ -102,6 +114,7 @@ class Character:
         self.beam_width = 120
         self.transparency = 50
         self.animation_speed = 0.1
+        self.sound_played = False
 
 # Create the character's hitbox rect
     def get_rect_hitbox(self):
@@ -125,6 +138,7 @@ class Character:
             self.ymovement = False
             character1.attack_available, character2.attack_available = False, False
             self.in_the_air = False
+            death_sound.play()
         
         elif self.health > 0: # Restore the character attributes when the health is more than 0
             self.alive = True
@@ -151,13 +165,17 @@ class Character:
             self.collide_bottom = False
             self.platform_collidable = True
             self.in_the_air = False
-
+            if self.sound_played == False:
+                land_sound.play()
+                self.sound_played = True
         elif self.get_rect_hitbox().colliderect(bottom):
             self.collide_bottom = True
             self.collide_ground = False
             self.collide_platform = False
             self.in_the_air = False
-        
+            if self.sound_played == False:
+                land_sound.play()
+                self.sound_played = True
         else:
             for platform in platforms:                
                 if self.get_rect_hitbox().colliderect(platform):
@@ -170,6 +188,9 @@ class Character:
                         self.jump_count = 0 
                         self.platform_collidable = True
                         self.in_the_air = False
+                        if self.sound_played == False:
+                            land_sound.play()
+                            self.sound_played = True
                         break
     # For animation logic, checks which animation is prioritized
     def check_movement(self):
@@ -216,10 +237,14 @@ class Character:
                     self.in_the_air = True
                     self.frame_index = 0
                     self.platform_collidable = True
+                    jump_sound.play()
+                    self.sound_played = False
                 if keys[pygame.K_v] and self.velocity_y >= 18 and self.sprint_time > 0: # Dash
                     self.velocity_y = -20
                     self.sprint_time -= 200
                     self.run = True
+                    jump_sound.play()
+
 
             if keys[pygame.K_s] and self.ymovement: # Character 1 move down
                 self.direction = 'down'
@@ -229,13 +254,13 @@ class Character:
                     self.velocity_y += 0.78
                     self.ypos += self.velocity_y
                     self.platform_collidable = False
-                    
+                    self.sound_played = False
+
                 if keys[pygame.K_v] and self.sprint_time > 0: # Dash
                     self.velocity_y = 25
                     self.sprint_time -= 200
                     self.run = True
-
-
+                    jump_sound.play()
 
             if keys[pygame.K_a] and not self.collide_bottom and self.xmovement: # Character 1 move left
                 self.xpos -= 5
@@ -245,7 +270,7 @@ class Character:
                     self.xpos -= 10
                     self.sprint_time -= 20
                     self.run = True
-
+                    jump_sound.play()
 
             if keys[pygame.K_d] and not self.collide_bottom and self.xmovement: # Character 1 move right
                 self.xpos += 5
@@ -255,7 +280,7 @@ class Character:
                     self.xpos += 10
                     self.sprint_time -= 20
                     self.run = True
-
+                    jump_sound.play()
 
             if not keys[pygame.K_a] and not keys[pygame.K_d]: # For animation
                 self.walking = False
@@ -288,12 +313,14 @@ class Character:
                     self.in_the_air = True
                     self.frame_index = 0
                     self.platform_collidable = True
+                    jump_sound.play()
+                    self.sound_played = False
 
                 if keys[pygame.K_m] and self.velocity_y >= 18 and self.sprint_time > 0:
                     self.velocity_y = -20
                     self.sprint_time -= 200
                     self.run = True
-
+                    jump_sound.play()
 
             if keys[pygame.K_DOWN] and self.ymovement:
                 self.direction = 'down'
@@ -303,11 +330,13 @@ class Character:
                     self.velocity_y += 0.78
                     self.ypos += self.velocity_y
                     self.platform_collidable = False
+                    self.sound_played = False
+
                 if keys[pygame.K_m] and self.sprint_time > 0:
                     self.velocity_y = 25
                     self.sprint_time -= 200
                     self.run = True
-
+                    jump_sound.play()
 
             if keys[pygame.K_LEFT] and not self.collide_bottom and self.xmovement :
                 self.xpos -= 5
@@ -317,7 +346,7 @@ class Character:
                     self.xpos -= 10
                     self.sprint_time -= 20
                     self.run = True
-
+                    jump_sound.play()
 
             if keys[pygame.K_RIGHT] and not self.collide_bottom and self.xmovement:
                 self.xpos += 5
@@ -327,7 +356,7 @@ class Character:
                     self.xpos += 10
                     self.sprint_time -= 20
                     self.run = True
-
+                    jump_sound.play()
 
             # For animation
             if not keys[pygame.K_LEFT] and not keys[pygame.K_RIGHT]:
@@ -482,6 +511,7 @@ class Character:
                     self.attack_available = False
                     self.attack_cooldown = True
                     self.is_attacking = True
+                    character1_attack1_sound.play()
             if self.attack_available:
                 if self.frame_index > 2:
                     self.is_attacking = False
@@ -494,6 +524,7 @@ class Character:
                     self.skill_counter = 0
                     self.xmovement = False
                     self.ymovement = False
+                    character1_attack2_sound.play()
 
             if self.attacking_range == True:
                 self.range = 'range'
@@ -528,6 +559,7 @@ class Character:
                     self.is_ult = True
                     self.xmovement = False
                     self.ymovement = False
+                    character1_attack2_sound.play()
                     if other.inrange:
                         other.take_damage(70)
                         other.inrange = False
@@ -556,6 +588,7 @@ class Character:
                     self.ulti_counter = min(8, self.ulti_counter)
                     self.attack_available = False
                     self.is_attacking = True
+                    character2_attack1_sound.play()
             if self.attack_available:
                 if self.frame_index > 5:
                     self.is_attacking = False
@@ -569,6 +602,7 @@ class Character:
                     self.skill_counter = 0
                     self.xmovement = False
                     self.ymovement = False
+                    character2_attack2_sound.play()
 
             if self.attacking_range == True:
                 self.range = 'range'
@@ -596,6 +630,7 @@ class Character:
                     self.is_ult = True
                     self.xmovement = False
                     self.ymovement = False
+                    character2_attack2_sound.play()
                     if other.inrange:
                         other.take_damage(70)
                         other.inrange = False
@@ -618,6 +653,8 @@ class Character:
             if self.velocity_y > 1:
                 self.in_the_air = True
                 self.frame_index = 5
+                self.sound_played = False
+
         # Sets the direction of the knocked back animation
         if other.is_knocked_back:
             other.knockback(self.direction, multiplier)
@@ -643,7 +680,7 @@ class Character:
     def update_animation(self, character):
         # Speed of the frames logic for each action
         if self.current_action == 'idle' or 'walk' or 'dead' or 'hurt': 
-            self.animation_speed = 0.1
+            self.animation_speed = 0.01
         if self.current_action == 'run':
             self.animation_speed = 0.2
         if self.current_action == 'jump':
@@ -653,16 +690,12 @@ class Character:
                 self.animation_speed = 0.05     
         if character1.current_action == 'attack1_side' or 'attack1_up':
             self.animation_speed = 0.6         
-        if character1.current_action == 'attack2_side':
+        if character1.current_action == 'attack2_side' or 'attack2_up':
             if character1.frame_index < 7:
                 self.animation_speed = 0.6
             elif character1.frame_index >= 7:
                 self.animation_speed = 0.1
-        if character1.current_action == 'attack2_up':
-            if character1.frame_index < 7:
-                self.animation_speed = 0.6
-            elif character1.frame_index >= 7:
-                self.animation_speed = 0.1
+        
         if character1.current_action == 'ult_side':
             if self.frame_index < 6:
                 self.animation_speed = 0.6
@@ -678,12 +711,7 @@ class Character:
                 self.animation_speed = 0.6   
             elif character2.frame_index >= 4:
                 self.animation_speed = 0.1        
-        if character2.current_action == 'attack2_side':
-            if character2.frame_index > 11:
-                character2.animation_speed = 0.6
-            elif character2.frame_index >= 11:
-                character2.animation_speed = 0.3
-        if character2.current_action == 'attack2_up':
+        if character2.current_action == 'attack2_side' or 'attack2_up':
             if character2.frame_index > 11:
                 character2.animation_speed = 0.6
             elif character2.frame_index >= 11:
